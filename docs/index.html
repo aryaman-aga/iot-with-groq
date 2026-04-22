@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IIOT Quiz Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@10..48,400;10..48,600;10..48,800&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (() => {
+        try {
+          const savedTheme = window.localStorage.getItem("iiot-theme");
+          const prefersDark =
+            window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          const theme = savedTheme || (prefersDark ? "dark" : "light");
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (_) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+    <div class="ambient ambient-three" aria-hidden="true"></div>
+
+    <main class="page-shell">
+      <section class="hero-card reveal">
+        <div class="hero-topline">
+          <p class="eyebrow">Interactive IIOT Revision Portal</p>
+          <button id="themeToggleBtn" class="theme-toggle" type="button" aria-pressed="false">
+            Switch to Dark
+          </button>
+        </div>
+        <h1>Quiz Across 3 Assignment Sets</h1>
+        <p class="hero-copy">
+          Practice year-wise questions from your PDFs with instant correctness feedback, optional
+          shuffling, and detailed score tracking.
+        </p>
+        <div id="heroMetrics" class="hero-metrics">
+          <div class="metric">
+            <span class="metric-label">Total Questions</span>
+            <span id="totalQuestionsMetric" class="metric-value">--</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Question Sets</span>
+            <span id="questionSetsMetric" class="metric-value">--</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="setupPanel" class="glass-card reveal delay-1">
+        <div class="section-head">
+          <h2>Build Your Quiz</h2>
+          <p>Select one or more year sets and choose whether to shuffle.</p>
+        </div>
+
+        <div class="source-grid" id="sourceGrid"></div>
+
+        <div class="setup-controls">
+          <label class="switch-wrap">
+            <input type="checkbox" id="shuffleToggle" />
+            <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
+            <span class="switch-label">Shuffle questions</span>
+          </label>
+
+          <button id="startQuizBtn" class="primary-btn" type="button">Start Quiz</button>
+        </div>
+
+        <p id="setupError" class="setup-error" aria-live="polite"></p>
+      </section>
+
+      <section id="quizPanel" class="glass-card hidden">
+        <div class="quiz-head">
+          <span id="progressPill" class="pill">Question 1 / 1</span>
+          <div class="quiz-head-controls">
+            <span class="pill score-pill">Score: <strong id="scoreValue">0</strong></span>
+            <button id="backToSetupBtn" class="ghost-btn ghost-btn-top" type="button">Exit</button>
+          </div>
+        </div>
+
+        <div class="question-meta-row">
+          <span id="weekTag" class="week-tag">Week 1</span>
+        </div>
+        <p id="sourceBadge" class="source-badge"></p>
+        <h2 id="questionText" class="question-text"></h2>
+
+        <div id="optionsContainer" class="option-list"></div>
+
+        <div id="feedbackBanner" class="feedback hidden" aria-live="polite"></div>
+
+        <div class="quiz-actions">
+          <button id="prevQuestionBtn" class="ghost-btn" type="button">Previous Question</button>
+          <button id="nextQuestionBtn" class="secondary-btn hidden" type="button">Next Question</button>
+        </div>
+      </section>
+
+      <section id="resultPanel" class="glass-card hidden">
+        <div class="section-head">
+          <h2>Quiz Complete</h2>
+          <p id="finalScoreText"></p>
+        </div>
+
+        <div id="sourceBreakdown" class="breakdown-grid"></div>
+
+        <div class="quiz-actions">
+          <button id="restartBtn" class="primary-btn" type="button">Start Another Quiz</button>
+        </div>
+      </section>
+    </main>
+
+    <script defer src="./app.js"></script>
+  </body>
+</html>
