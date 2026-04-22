@@ -7,7 +7,7 @@ A production-ready quiz web app generated from your 3 IIOT PDF assignment files.
 - Extracts MCQ questions from:
   - `2024 iiot.pdf`
   - `2026 iiot assignments.pdf`
-  - `Merged IIOT Assignments.pdf`
+  - `2025 iiot assignments.pdf`
 - Year/source-wise question selection
 - Shuffle or non-shuffle mode
 - Instant correctness feedback after each answer

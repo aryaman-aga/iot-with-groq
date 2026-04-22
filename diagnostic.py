@@ -45,7 +45,7 @@ def diagnostic(pdf_path):
         "missing_options": missing_options_with_answer
     }
 
-files = ["2024 iiot.pdf", "2026 iiot assignments.pdf", "Merged IIOT Assignments.pdf"]
+files = ["2024 iiot.pdf", "2026 iiot assignments.pdf", "2025 iiot assignments.pdf"]
 for f in files:
     try:
         res = diagnostic(f)

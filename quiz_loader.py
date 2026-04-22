@@ -11,7 +11,7 @@ from pypdf import PdfReader
 PDF_SOURCES = [
     "2024 iiot.pdf",
     "2026 iiot assignments.pdf",
-    "Merged IIOT Assignments.pdf",
+    "2025 iiot assignments.pdf",
 ]
 
 QUESTION_PATTERN = re.compile(r"^QUESTION\s*(\d+)\s*[:\.)-]?\s*(.*)$", re.IGNORECASE)
