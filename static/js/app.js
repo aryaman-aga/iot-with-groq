@@ -446,10 +446,22 @@
   if (groqSecretCode) {
     groqSecretCode.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
-        state.secretCode = groqSecretCode.value.trim();
-        // Subtle feedback
-        groqSecretCode.style.opacity = "0";
-        setTimeout(() => groqSecretCode.style.opacity = "0.05", 500);
+        const val = groqSecretCode.value.trim();
+        state.secretCode = val;
+        
+        if (val === "arya21") {
+          // Success glow
+          groqSecretCode.style.boxShadow = "0 0 10px 2px rgba(16, 185, 129, 0.6)";
+          groqSecretCode.style.borderColor = "rgba(16, 185, 129, 0.8)";
+          groqSecretCode.style.opacity = "0.8";
+          groqSecretCode.style.transition = "all 0.3s ease";
+        } else {
+          // Subtle error reset
+          groqSecretCode.style.boxShadow = "none";
+          groqSecretCode.style.borderColor = "rgba(255, 255, 255, 0.2)";
+          groqSecretCode.style.opacity = "0";
+          setTimeout(() => groqSecretCode.style.opacity = "0.3", 500);
+        }
       }
     });
   }
