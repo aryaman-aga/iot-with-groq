@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import random
 import uuid
@@ -54,6 +55,7 @@ class QuizSession:
     question_ids: list[str]
     selected_sources: list[str]
     shuffle_enabled: bool
+    shuffle_options: bool = False
     current_index: int = 0
     score: int = 0
     answer_log: list[dict[str, Any]] = field(default_factory=list)
@@ -98,7 +100,15 @@ Briefly explain why the correct answer is right and the user's selection was wro
         return None
 
 
-def _public_question(question: dict[str, Any]) -> dict[str, Any]:
+def _public_question(question: dict[str, Any], session_id: str | None = None, shuffle_options: bool = False) -> dict[str, Any]:
+    options_list = [{"key": key, "text": value} for key, value in question["options"].items()]
+    
+    if shuffle_options and session_id:
+        seed_str = f"{session_id}_{question['id']}"
+        seed_val = int(hashlib.md5(seed_str.encode()).hexdigest(), 16)
+        rng = random.Random(seed_val)
+        rng.shuffle(options_list)
+
     return {
         "id": question["id"],
         "source_id": question["source_id"],
@@ -108,7 +118,7 @@ def _public_question(question: dict[str, Any]) -> dict[str, Any]:
         "page": question.get("page"),
         "question_number": question["question_number"],
         "text": question["question"],
-        "options": [{"key": key, "text": value} for key, value in question["options"].items()],
+        "options": options_list,
     }
 
 
@@ -166,6 +176,7 @@ def start_quiz() -> Any:
     body = request.get_json(silent=True) or {}
     selected_sources = _normalize_source_selection(body.get("sources", []))
     shuffle_enabled = bool(body.get("shuffle", False))
+    shuffle_options_enabled = bool(body.get("shuffle_options", False))
 
     selected_questions = [
         question for question in QUESTION_LIST if question["source_id"] in selected_sources
@@ -183,6 +194,7 @@ def start_quiz() -> Any:
         question_ids=question_ids,
         selected_sources=selected_sources,
         shuffle_enabled=shuffle_enabled,
+        shuffle_options=shuffle_options_enabled,
     )
 
     with QUIZ_LOCK:
@@ -198,7 +210,7 @@ def start_quiz() -> Any:
             "current_question_index": 1,
             "active_question_index": 1,
             "score": 0,
-            "question": _public_question(first_question),
+            "question": _public_question(first_question, session_id=quiz_id, shuffle_options=shuffle_options_enabled),
         }
     )
 
@@ -232,7 +244,7 @@ def get_question() -> Any:
     question = QUESTION_LOOKUP[question_id]
 
     response_payload: dict[str, Any] = {
-        "question": _public_question(question),
+        "question": _public_question(question, session_id=quiz_id, shuffle_options=session.shuffle_options),
         "current_question_index": question_index,
         "active_question_index": active_question_index,
         "total_questions": total_questions,
@@ -329,7 +341,7 @@ def submit_answer() -> Any:
     next_question = QUESTION_LOOKUP[next_question_id]
     response_payload["active_question_index"] = session.current_index + 1
     response_payload["next_question_index"] = session.current_index + 1
-    response_payload["next_question"] = _public_question(next_question)
+    response_payload["next_question"] = _public_question(next_question, session_id=quiz_id, shuffle_options=session.shuffle_options)
     return jsonify(response_payload)
 
 

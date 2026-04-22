@@ -6,6 +6,7 @@
 
   const startQuizBtn = document.getElementById("startQuizBtn");
   const shuffleToggle = document.getElementById("shuffleToggle");
+  const shuffleOptionsToggle = document.getElementById("shuffleOptionsToggle");
   const setupError = document.getElementById("setupError");
 
   const progressPill = document.getElementById("progressPill");
@@ -269,6 +270,7 @@
         body: JSON.stringify({
           sources: selectedSources,
           shuffle: shuffleToggle.checked,
+          shuffle_options: shuffleOptionsToggle.checked,
         }),
       });
 
