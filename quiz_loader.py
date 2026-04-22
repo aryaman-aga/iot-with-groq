@@ -366,6 +366,15 @@ def parse_questions_from_pdf(file_path: Path, source_id: str, source_label: str)
         if in_solution_section:
             continue
 
+        detailed_match = DETAILED_SOLUTION_PATTERN.search(line)
+        if detailed_match:
+            in_solution_section = True
+            line = _normalize_whitespace(line[: detailed_match.start()])
+            if not line:
+                current_option_key = None
+                pending_option_keys = []
+                continue
+
         answer_match = CORRECT_PATTERN.search(line)
         line_before_answer = line
         if answer_match:
@@ -391,8 +400,6 @@ def parse_questions_from_pdf(file_path: Path, source_id: str, source_label: str)
             if answer_match:
                 current_option_key = None
                 pending_option_keys = []
-            if DETAILED_SOLUTION_PATTERN.search(line):
-                in_solution_section = True
             continue
 
         option_match = OPTION_PATTERN.match(line_before_answer)
@@ -412,19 +419,9 @@ def parse_questions_from_pdf(file_path: Path, source_id: str, source_label: str)
             if answer_match:
                 current_option_key = None
                 pending_option_keys = []
-            if DETAILED_SOLUTION_PATTERN.search(line):
-                in_solution_section = True
             continue
 
         if answer_match:
-            current_option_key = None
-            pending_option_keys = []
-            if DETAILED_SOLUTION_PATTERN.search(line):
-                in_solution_section = True
-            continue
-
-        if DETAILED_SOLUTION_PATTERN.search(line):
-            in_solution_section = True
             current_option_key = None
             pending_option_keys = []
             continue

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-22T18:46:11.008286+00:00",
+  "generated_at": "2026-04-22T18:54:42.766541+00:00",
   "sources": [
     {
       "source_id": "2024",
@@ -6425,7 +6425,7 @@
         "a": "RFID",
         "b": "Nanotechnology",
         "c": "Sensors",
-        "d": "Smart Networks"
+        "d": "All of these"
       },
       "answer": "d",
       "answer_text": "All of these",
@@ -6440,8 +6440,8 @@
       "question_number": 4,
       "question": "Which of the following is NOT a function of an IoT LAN?",
       "options": {
-        "a": "Local, short-range communication",
-        "b": "Spreads across buildings or organization",
+        "a": "Long range communication, global",
+        "b": "World wide connections",
         "c": "Both (a) and (b)",
         "d": "Neither (a) Nor (b)"
       },
@@ -6721,9 +6721,9 @@
       "question_number": 5,
       "question": "Which of the following is MQTT component?",
       "options": {
-        "a": "Publishers",
-        "b": "Subscribers",
-        "c": "Beokers",
+        "a": "Middleman",
+        "b": "Mules",
+        "c": "Both (a) and (b)",
         "d": "None of these"
       },
       "answer": "d",
