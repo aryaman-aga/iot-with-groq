@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-22T17:00:56.306844+00:00",
+  "generated_at": "2026-04-22T18:46:11.008286+00:00",
   "sources": [
     {
       "source_id": "2024",
@@ -1369,7 +1369,7 @@
         "b": "False"
       },
       "answer": "a",
-      "answer_text": "TrueDetailed Solution:As per Python program. (Pleaserefer to lecture INTRODUCTION TOPYTHON PROGRAMMING- I @ 3:40)",
+      "answer_text": "True",
       "week": 6,
       "page": 32,
       "id": "2024-76",
@@ -1387,7 +1387,7 @@
         "d": "All of these"
       },
       "answer": "d",
-      "answer_text": "All of theseDetailedSolution:AsperPythonprogram.(PleaserefertolectureINTRODUCTIONTOPYTHON PROGRAMMING- I @ 4:50)",
+      "answer_text": "All of these",
       "week": 6,
       "page": 32,
       "id": "2024-77",
@@ -1423,7 +1423,7 @@
         "d": "\u201cabc\""
       },
       "answer": "b",
-      "answer_text": "2Detailed Solution:As per the basics of Python programming.(Please refer to lectureINTRODUCTION TO PYTHON PROGRAMMING- I @ 15:23)",
+      "answer_text": "2",
       "week": 6,
       "page": 33,
       "id": "2024-79",
@@ -1439,7 +1439,7 @@
         "b": "False"
       },
       "answer": "b",
-      "answer_text": "FalseDetailedSolution:Asperthebasicsof Pythonprogramming.(Pleasereferto lectureINTRODUCTION TO PYTHON PROGRAMMING- I @ 25:58)",
+      "answer_text": "False",
       "week": 6,
       "page": 34,
       "id": "2024-80",
@@ -1475,7 +1475,7 @@
         "d": "None of these"
       },
       "answer": "a",
-      "answer_text": "PillowDetailedSolution:In pythonprogrammingPIL,OpenCV, Pillowarecommonimageprocessinglibraries.(Pleaserefer to lectureINTRODUCTIONTO PYTHONPROGRAMMING- II @ 18:08 )",
+      "answer_text": "Pillow",
       "week": 6,
       "page": 35,
       "id": "2024-82",
@@ -1491,7 +1491,7 @@
         "b": "False"
       },
       "answer": "b",
-      "answer_text": "FalseDetailedSolution:Asperthebasicsof Pythonprogramming(Pleasereferto lectureINTRODUCTION TO PYTHON PROGRAMMING- II @19:44).",
+      "answer_text": "False",
       "week": 6,
       "page": 35,
       "id": "2024-83",
@@ -1509,7 +1509,7 @@
         "d": "None of these"
       },
       "answer": "d",
-      "answer_text": "None of theseDetailed Solution:Ctrl + O writes the code to a file.Ctrl + X exits the nano editor.",
+      "answer_text": "None of these",
       "week": 6,
       "page": 36,
       "id": "2024-84",
@@ -1527,7 +1527,7 @@
         "d": "Tuple"
       },
       "answer": "b",
-      "answer_text": "DictionaryDetailed Solution:As per basics of Python programming.",
+      "answer_text": "Dictionary",
       "week": 6,
       "page": 36,
       "id": "2024-85",
@@ -1559,7 +1559,7 @@
         "b": "Yes"
       },
       "answer": "b",
-      "answer_text": "YesDetailedSolution:Relayisatypeofmechanical/electromechanicalswitch. Seelecture30 @ 05:53",
+      "answer_text": "Yes",
       "week": 6,
       "page": 37,
       "id": "2024-87",
@@ -1577,7 +1577,7 @@
         "d": "None of these"
       },
       "answer": "a",
-      "answer_text": "ActuatorDetailed Solution: Actuator converts energy to motion.",
+      "answer_text": "Actuator",
       "week": 6,
       "page": 38,
       "id": "2024-88",
@@ -1593,7 +1593,7 @@
         "b": "False"
       },
       "answer": "b",
-      "answer_text": "FalseDetailedSolution:Asperthebasicsof Pythonprogramming.(Pleasereferto lectureINTRODUCTION TO PYTHON PROGRAMMING- I @ 7:47)",
+      "answer_text": "False",
       "week": 6,
       "page": 38,
       "id": "2024-89",
@@ -1603,13 +1603,13 @@
     },
     {
       "question_number": 15,
-      "question": "Functions cannot be reassigned to the variables in Python. ************END***********",
+      "question": "Functions cannot be reassigned to the variables in Python.",
       "options": {
         "a": "True",
         "b": "False"
       },
       "answer": "b",
-      "answer_text": "FalseDetailedSolution:Asperthebasicsof Pythonprogramming.(Pleasereferto lectureINTRODUCTION TO PYTHON PROGRAMMING- I @ 24:54)",
+      "answer_text": "False",
       "week": 6,
       "page": 39,
       "id": "2024-90",
