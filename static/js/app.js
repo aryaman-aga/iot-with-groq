@@ -25,6 +25,7 @@
   const finalScoreText = document.getElementById("finalScoreText");
   const sourceBreakdown = document.getElementById("sourceBreakdown");
   const restartBtn = document.getElementById("restartBtn");
+  const groqSecretCode = document.getElementById("groqSecretCode");
 
   const state = {
     quizId: "",
@@ -35,6 +36,7 @@
     currentQuestion: null,
     finalSummary: null,
     locked: false,
+    secretCode: "",
   };
 
   function getCurrentTheme() {
@@ -205,6 +207,7 @@
         body: JSON.stringify({
           question_id: questionId,
           selected_option: selectedOption,
+          secret_code: state.secretCode,
         }),
       });
 
@@ -439,6 +442,17 @@
   }
   backToSetupBtn.addEventListener("click", goBackToSetup);
   restartBtn.addEventListener("click", resetToSetup);
+
+  if (groqSecretCode) {
+    groqSecretCode.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        state.secretCode = groqSecretCode.value.trim();
+        // Subtle feedback
+        groqSecretCode.style.opacity = "0";
+        setTimeout(() => groqSecretCode.style.opacity = "0.05", 500);
+      }
+    });
+  }
 
   if (themeToggleBtn) {
     updateThemeToggleUi(getCurrentTheme());

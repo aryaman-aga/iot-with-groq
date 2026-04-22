@@ -352,6 +352,10 @@ def get_explanation() -> Any:
         return jsonify({"explanation": None}), 200
 
     body = request.get_json(silent=True) or {}
+    secret_code = str(body.get("secret_code", "")).strip()
+    if secret_code != "arya21":
+        return jsonify({"explanation": None}), 200
+
     question_id = str(body.get("question_id", "")).strip()
     selected_option = str(body.get("selected_option", "")).strip().lower()
 
