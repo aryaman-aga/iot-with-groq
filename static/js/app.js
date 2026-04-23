@@ -165,12 +165,18 @@
       return;
     }
 
-    if (nextQuestionBtn.dataset.mode === "finish") {
-      prevQuestionBtn.disabled = true;
+    const isLastQuestion = state.currentQuestionIndex === state.totalQuestions;
+    const isAnswered = state.locked;
+
+    if (isLastQuestion && isAnswered) {
+      nextQuestionBtn.dataset.mode = "finish";
+      nextQuestionBtn.textContent = "View Result";
       nextQuestionBtn.disabled = false;
       nextQuestionBtn.classList.remove("hidden");
+      prevQuestionBtn.disabled = state.currentQuestionIndex <= 1;
       return;
     }
+
 
     prevQuestionBtn.disabled = state.currentQuestionIndex <= 1;
 

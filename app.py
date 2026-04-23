@@ -345,7 +345,7 @@ def submit_answer() -> Any:
         return jsonify({"error": "Quiz session expired. Please start again."}), 404
 
     if session.current_index >= len(session.question_ids):
-        return jsonify({"error": "Quiz has already finished."}), 400
+        return jsonify({"error": "You have already completed all questions."}), 400
 
     active_question_id = session.question_ids[session.current_index]
     if question_id and question_id != active_question_id:
