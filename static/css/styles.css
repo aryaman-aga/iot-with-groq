@@ -764,3 +764,32 @@ body {
 .week-tile:has(input:checked) span {
   color: var(--accent-main);
 }
+
+/* Revision Card Styles */
+.revision-card {
+  grid-column: 1 / -1;
+  border-left: 4px solid var(--bad);
+  background: rgba(176, 43, 43, 0.05);
+}
+
+.congrats-card {
+  grid-column: 1 / -1;
+  border-left: 4px solid var(--ok);
+  background: rgba(21, 120, 95, 0.05);
+}
+
+.revision-pills {
+  margin-top: 0.8rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.week-pill {
+  background: var(--bad);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}

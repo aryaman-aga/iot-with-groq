@@ -44,6 +44,23 @@
     secretCode: "",
   };
 
+  const STORAGE_KEY = "iiot-quiz-state";
+
+  function saveProgress() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        quizId: state.quizId,
+        secretCode: state.secretCode,
+      }));
+    } catch (e) {
+      console.warn("Could not save progress:", e);
+    }
+  }
+
+  function clearProgress() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
   function getCurrentTheme() {
     return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
   }
@@ -267,6 +284,58 @@
     }
   }
 
+  async function resumeSession() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+
+    try {
+      const { quizId, secretCode } = JSON.parse(saved);
+      if (!quizId) return;
+
+      state.quizId = quizId;
+      state.secretCode = secretCode;
+
+      // Sync secret code UI
+      if (secretCode === "arya21" && groqSecretCode) {
+        groqSecretCode.value = secretCode;
+        groqSecretCode.style.boxShadow = "0 0 10px 2px rgba(16, 185, 129, 0.6)";
+        groqSecretCode.style.borderColor = "rgba(16, 185, 129, 0.8)";
+        groqSecretCode.style.opacity = "0.8";
+      }
+
+      // Try to fetch current state from server
+      const response = await fetch("/api/question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quiz_id: quizId,
+          question_index: 1, // Start by checking if session exists
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        clearProgress();
+        return;
+      }
+
+      // If session exists, we can resume. Let's find the current active question.
+      state.totalQuestions = data.total_questions;
+      state.score = data.score;
+      state.activeQuestionIndex = data.active_question_index;
+      
+      setupPanel.classList.add("hidden");
+      quizPanel.classList.remove("hidden");
+      setQuizModeUi(true);
+
+      // Load the active question
+      fetchQuestion(data.active_question_index);
+    } catch (e) {
+      console.warn("Failed to resume session:", e);
+      clearProgress();
+    }
+  }
+
   async function fetchQuestion(questionIndex) {
     if (!state.quizId) {
       return;
@@ -339,6 +408,7 @@
       quizPanel.classList.remove("hidden");
       setQuizModeUi(true);
 
+      saveProgress();
       renderQuestion(data.question, data.current_question_index);
     } catch (error) {
       setSetupError(error.message || "Could not start quiz.");
@@ -379,6 +449,7 @@
       renderAnsweredState(data);
 
       if (data.finished) {
+        clearProgress();
         state.finalSummary = data.summary;
         nextQuestionBtn.textContent = "View Result";
         nextQuestionBtn.dataset.mode = "finish";
@@ -412,10 +483,36 @@
       return;
     }
 
-    const { score, total, percent, source_breakdown: sourceBreakdownData } = state.finalSummary;
+    const { score, total, percent, source_breakdown: sourceBreakdownData, week_breakdown: weekBreakdownData } = state.finalSummary;
     finalScoreText.textContent = `You scored ${score} out of ${total} (${percent}%).`;
 
+    // Revision suggestions
+    const weeksToRevise = weekBreakdownData.filter(w => (w.correct / w.total) < 0.75);
+    
     sourceBreakdown.innerHTML = "";
+    
+    // Add revision alert if needed
+    if (weeksToRevise.length > 0) {
+        const revisionCard = document.createElement("article");
+        revisionCard.className = "breakdown-card revision-card";
+        revisionCard.innerHTML = `
+            <h3 style="color: var(--bad)">📚 Revision Needed</h3>
+            <p>You scored less than 75% in the following weeks:</p>
+            <div class="revision-pills">
+                ${weeksToRevise.map(w => `<span class="week-pill">Week ${w.week}</span>`).join("")}
+            </div>
+        `;
+        sourceBreakdown.appendChild(revisionCard);
+    } else if (percent >= 90) {
+        const congratsCard = document.createElement("article");
+        congratsCard.className = "breakdown-card congrats-card";
+        congratsCard.innerHTML = `
+            <h3 style="color: var(--ok)">🌟 Excellence!</h3>
+            <p>You have a strong grasp of all selected weeks. Keep it up!</p>
+        `;
+        sourceBreakdown.appendChild(congratsCard);
+    }
+
     sourceBreakdownData.forEach((entry) => {
       const card = document.createElement("article");
       card.className = "breakdown-card";
@@ -525,6 +622,9 @@
     updateThemeToggleUi(getCurrentTheme());
     themeToggleBtn.addEventListener("click", toggleTheme);
   }
+
+  // Attempt to resume session
+  resumeSession();
 
   // Initial week grid population
   updateWeekGrid();

@@ -177,16 +177,26 @@ def _normalize_source_selection(raw_sources: Any) -> list[str]:
     return filtered
 
 
-def _build_source_breakdown(answer_log: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    stats: dict[str, dict[str, Any]] = {}
+    return sorted(stats.values(), key=lambda entry: entry["source_label"])
+
+
+def _build_week_breakdown(answer_log: list[dict[dict[str, Any]]]) -> list[dict[str, Any]]:
+    stats: dict[int, dict[str, Any]] = {}
 
     for item in answer_log:
-        source_id = item["source_id"]
+        question_id = item["question_id"]
+        question = QUESTION_LOOKUP.get(question_id)
+        if not question:
+            continue
+            
+        week = question.get("week")
+        if week is None:
+            continue
+            
         bucket = stats.setdefault(
-            source_id,
+            week,
             {
-                "source_id": source_id,
-                "source_label": SOURCE_LABEL_LOOKUP.get(source_id, source_id),
+                "week": week,
                 "correct": 0,
                 "total": 0,
             },
@@ -195,7 +205,8 @@ def _build_source_breakdown(answer_log: list[dict[str, Any]]) -> list[dict[str, 
         if item["correct"]:
             bucket["correct"] += 1
 
-    return sorted(stats.values(), key=lambda entry: entry["source_label"])
+    # Convert to list and sort by week number
+    return sorted(stats.values(), key=lambda entry: entry["week"])
 
 
 @app.get("/")
@@ -386,6 +397,7 @@ def submit_answer() -> Any:
             "total": total_questions,
             "percent": score_percent,
             "source_breakdown": _build_source_breakdown(session.answer_log),
+            "week_breakdown": _build_week_breakdown(session.answer_log),
         }
         with QUIZ_LOCK:
             QUIZ_SESSIONS.pop(quiz_id, None)
