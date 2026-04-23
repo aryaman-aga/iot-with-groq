@@ -269,11 +269,16 @@
     markAnswered(selectedOption, correctOption, q.options[correctOption], isCorrect);
     
     if (isCorrect) {
+      const capturedIndex = state.currentQuestionIndex;
       setTimeout(() => {
-        if (state.currentQuestionIndex < state.quizQuestionIds.length && !state.locked) {
-           // Auto advance if they haven't moved yet
+        if (state.currentQuestionIndex === capturedIndex && state.locked) {
+          if (state.currentQuestionIndex < state.quizQuestionIds.length) {
+            renderQuestion(state.currentQuestionIndex + 1);
+          } else {
+            showFinalSummary();
+          }
         }
-      }, 1500);
+      }, 1000);
     }
     
     saveProgress();
@@ -428,6 +433,14 @@
 
   // Event Listeners
   startQuizBtn.addEventListener("click", startQuiz);
+
+  selectAllWeeksBtn.addEventListener("click", () => {
+    document.querySelectorAll(".week-checkbox").forEach(cb => cb.checked = true);
+  });
+
+  clearAllWeeksBtn.addEventListener("click", () => {
+    document.querySelectorAll(".week-checkbox").forEach(cb => cb.checked = false);
+  });
   
   optionsContainer.addEventListener("click", e => {
     const btn = e.target.closest(".option-btn");
