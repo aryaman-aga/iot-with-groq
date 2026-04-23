@@ -74,24 +74,7 @@ def _get_groq_explanation(question: dict[str, Any], selected_option: str, correc
         return None
 
     try:
-        is_correct = selected_option == correct_option
-        
-        if is_correct:
-            prompt = f"""The user answered correctly on this question:
-
-Question: {question['question']}
-
-Options:
-A) {question['options']['a']}
-B) {question['options']['b']}
-C) {question['options']['c']}
-D) {question['options']['d']}
-
-The user correctly selected: {selected_option.upper()}) {question['options'][selected_option]}
-
-Briefly explain why this is the correct answer. Be concise (2-3 sentences)."""
-        else:
-            prompt = f"""The user answered incorrectly on this question:
+        prompt = f"""The user answered incorrectly on this question:
 
 Question: {question['question']}
 
@@ -381,9 +364,7 @@ def get_explanation() -> Any:
         return jsonify({"error": "Question not found."}), 404
 
     correct_option = question["answer"]
-    
-    # If no secret code, only explain WRONG answers
-    if secret_code != "arya21" and selected_option == correct_option:
+    if selected_option == correct_option:
         return jsonify({"explanation": None}), 200
 
     explanation = _get_groq_explanation(question, selected_option, correct_option)

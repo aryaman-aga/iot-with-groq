@@ -17,8 +17,6 @@
   const questionText = document.getElementById("questionText");
   const optionsContainer = document.getElementById("optionsContainer");
   const feedbackBanner = document.getElementById("feedbackBanner");
-  const explainContainer = document.getElementById("explainContainer");
-  const explainBtn = document.getElementById("explainBtn");
   const prevQuestionBtn = document.getElementById("prevQuestionBtn");
   const nextQuestionBtn = document.getElementById("nextQuestionBtn");
   const backToSetupBtn = document.getElementById("backToSetupBtn");
@@ -92,9 +90,6 @@
     feedbackBanner.classList.add("hidden");
     feedbackBanner.classList.remove("ok", "bad");
     feedbackBanner.textContent = "";
-    if (explainContainer) {
-      explainContainer.classList.add("hidden");
-    }
   }
 
   function showFeedback(message, status) {
@@ -193,20 +188,11 @@
 
     if (data.correct) {
       showFeedback("Correct answer. Great work.", "ok");
-      
-      // If secret code is valid, show the "Explain this" option for correct answers
-      if (state.secretCode === "arya21" && explainContainer) {
-        explainContainer.classList.remove("hidden");
-        explainBtn.dataset.questionId = state.currentQuestion ? state.currentQuestion.id : "";
-        explainBtn.dataset.selectedOption = data.selected_option;
-        explainBtn.disabled = false;
-        explainBtn.textContent = "Explain with Groq";
-      }
     } else {
       let message = `Wrong answer. Correct option: ${data.correct_option.toUpperCase()} - ${data.correct_option_text}`;
       showFeedback(message, "bad");
       
-      // Fetch AI explanation automatically for wrong answers
+      // Fetch AI explanation asynchronously
       if (state.currentQuestion) {
         fetchExplanation(state.currentQuestion.id, data.selected_option);
       }
@@ -214,11 +200,6 @@
   }
 
   async function fetchExplanation(questionId, selectedOption) {
-    if (explainBtn) {
-      explainBtn.disabled = true;
-      explainBtn.textContent = "Fetching...";
-    }
-
     try {
       const response = await fetch("/api/explanation", {
         method: "POST",
@@ -234,20 +215,10 @@
       if (response.ok && data.explanation) {
         // Append explanation to existing feedback
         feedbackBanner.textContent += `\n\n${data.explanation}`;
-        if (explainContainer) {
-          explainContainer.classList.add("hidden");
-        }
-      } else {
-        if (explainBtn) {
-          explainBtn.textContent = "No explanation available";
-        }
       }
     } catch (error) {
       // Silently fail - explanation is optional
       console.log("Could not fetch explanation:", error.message);
-      if (explainBtn) {
-        explainBtn.textContent = "Error fetching explanation";
-      }
     }
   }
 
@@ -471,16 +442,6 @@
   }
   backToSetupBtn.addEventListener("click", goBackToSetup);
   restartBtn.addEventListener("click", resetToSetup);
-
-  if (explainBtn) {
-    explainBtn.addEventListener("click", () => {
-      const qId = explainBtn.dataset.questionId;
-      const opt = explainBtn.dataset.selectedOption;
-      if (qId && opt) {
-        fetchExplanation(qId, opt);
-      }
-    });
-  }
 
   if (groqSecretCode) {
     groqSecretCode.addEventListener("keydown", (e) => {
