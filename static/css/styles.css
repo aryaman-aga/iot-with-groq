@@ -79,7 +79,8 @@
 
 html {
   min-height: 100%;
-  background:
+  background-color: var(--bg-1);
+  background-image:
     radial-gradient(circle at 10% 15%, var(--radial-1), transparent 28%),
     radial-gradient(circle at 88% 14%, var(--radial-2), transparent 30%),
     radial-gradient(circle at 76% 82%, var(--radial-3), transparent 32%),
@@ -90,7 +91,8 @@ body {
   margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
-  background:
+  background-color: var(--bg-1);
+  background-image:
     radial-gradient(circle at 10% 15%, var(--radial-1), transparent 28%),
     radial-gradient(circle at 88% 14%, var(--radial-2), transparent 30%),
     radial-gradient(circle at 76% 82%, var(--radial-3), transparent 32%),
