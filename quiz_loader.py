@@ -29,7 +29,10 @@ TRAILING_NOISE_PATTERN = re.compile(
     r"\b(See lecture|NPTEL Online Certification Courses|Indian Institute of Technology Kharagpur).*",
     re.IGNORECASE,
 )
-DETAILED_SOLUTION_PATTERN = re.compile(r"Detailed\s*Solution", re.IGNORECASE)
+DETAILED_SOLUTION_PATTERN = re.compile(
+    r"(Detailed\s*Solution|Detailed\s*Answer|Detailed\s*Explanation|Solution\s*:|Explanation\s*:)",
+    re.IGNORECASE,
+)
 SEPARATOR_PATTERN = re.compile(r"^[_*=\-]{6,}$")
 
 NOISE_PREFIXES = (

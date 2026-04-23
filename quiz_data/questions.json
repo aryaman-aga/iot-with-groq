@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-22T18:54:42.766541+00:00",
+  "generated_at": "2026-04-23T07:04:57.572212+00:00",
   "sources": [
     {
       "source_id": "2024",
@@ -1921,7 +1921,7 @@
     },
     {
       "question_number": 3,
-      "question": "In comparison to Software-Defined Networks, traditional networks are cost expensive with respect to which of the following? Detailed Answer: Traditional networks are cost expensive with respect to both capex and opex in comparison to SDN. (Please refer Lecture 36@2:46)",
+      "question": "In comparison to Software-Defined Networks, traditional networks are cost expensive with respect to which of the following?",
       "options": {
         "a": "Both capex and opex",
         "b": "Capex but not opex",
@@ -1939,7 +1939,7 @@
     },
     {
       "question_number": 4,
-      "question": "General OpenFlow supports both wireless and wired connections. Detailed Answer: A modified OpenFlow is necessary for supporting wireless connections. (Please refer Lecture 36@8:18)",
+      "question": "General OpenFlow supports both wireless and wired connections.",
       "options": {
         "a": "True",
         "b": "False"
@@ -2027,7 +2027,7 @@
     },
     {
       "question_number": 9,
-      "question": "Which of the following type of client requires constant communication/connection with the cloud server? Detailed Answer: A thin client is a network computer without a hard disk drive and high configurations. They act as simple terminals and require constant communication with the servers. (Please refer Lecture 37@20:00)",
+      "question": "Which of the following type of client requires constant communication/connection with the cloud server?",
       "options": {
         "a": "Thin client",
         "b": "Thick client",
@@ -2045,7 +2045,7 @@
     },
     {
       "question_number": 10,
-      "question": "Fill in the blank: Typically, cloud computing have _____ components? Detailed Answer: Cloud computing has 6 components. They are clients, services, applications, platforms, storage, and infrastructure. (Please refer Lecture 37@23:31)",
+      "question": "Fill in the blank: Typically, cloud computing have _____ components?",
       "options": {
         "a": "4",
         "b": "5",
@@ -2223,7 +2223,7 @@
     },
     {
       "question_number": 5,
-      "question": "The SCSP in sensor clouds is responsible for caching the data in the databases. Detailed Answer: The SCSP in sensor clouds is responsible for caching the data in the databases. (Please refer Lecture 42@14:25)",
+      "question": "The SCSP in sensor clouds is responsible for caching the data in the databases.",
       "options": {
         "a": "True",
         "b": "False"
@@ -2291,7 +2291,7 @@
     },
     {
       "question_number": 9,
-      "question": "How many different types of caching mechanism are there in sensor cloud? Detailed Answer: Internal Cache (IC) and External Cache (EC) are two different types of caching mechanisms used in sensor cloud. Refer lecture 43, ppt No. 13",
+      "question": "How many different types of caching mechanism are there in sensor cloud?",
       "options": {
         "a": "1",
         "b": "4",
@@ -4682,7 +4682,7 @@
     },
     {
       "question_number": 10,
-      "question": "When connecting the Raspberry Pi camera module to the Raspberry Pi using the ribbon cable, which direction should the blue tag on the cable face? Solution: When connecting the Raspberry Pi camera module to the Raspberry Pi using the ribbon cable the blue side should be pointed towards the Ethernet port (",
+      "question": "When connecting the Raspberry Pi camera module to the Raspberry Pi using the ribbon cable, which direction should the blue tag on the cable face?",
       "options": {
         "a": "Towards the HDMI port",
         "b": "Towards the USB ports",
@@ -4700,7 +4700,7 @@
     },
     {
       "question_number": 11,
-      "question": "Which command does the lecture recommend using in the terminal to capture an image directly with the Raspberry Pi camera without writing a full Python script? Solution: We can directly capture images using the Pi cam by writing the command \"raspistill -o image_name.jpg\" in the terminal. (",
+      "question": "Which command does the lecture recommend using in the terminal to capture an image directly with the Raspberry Pi camera without writing a full Python script?",
       "options": {
         "a": "sudo apt-get install python-picamera",
         "b": "raspistill -o image_name.jpg",
@@ -4718,7 +4718,7 @@
     },
     {
       "question_number": 12,
-      "question": "In the Python code shown for the blinking LED project, what is the purpose of the line GPIO.setmode(GPIO.BOARD)? Solution: GPIO.setmode(GPIO.BOARD) sets the mode to use board numbering rather than the other option. (",
+      "question": "In the Python code shown for the blinking LED project, what is the purpose of the line GPIO.setmode(GPIO.BOARD)?",
       "options": {
         "a": "To set the GPIO pins to output mode",
         "b": "To initialize the library for time functions",
@@ -4754,7 +4754,7 @@
     },
     {
       "question_number": 14,
-      "question": "Which pin numbering configuration does the Adafruit DHT library automatically use for the sensor, requiring the user to specify the pin number accordingly? Solution: For the Adafruit it automatically takes the board mode as BCM. So this pin number 11 is going to be according to board mode, whereas this pin 7 is according to BCM mode and explicitly notes regarding the DHT sensor. (",
+      "question": "Which pin numbering configuration does the Adafruit DHT library automatically use for the sensor, requiring the user to specify the pin number accordingly?",
       "options": {
         "a": "GPIO.BOARD",
         "b": "WiringPi",
@@ -8272,7 +8272,7 @@
     },
     {
       "question_number": 5,
-      "question": "Which among the following is a solution for mobility-aware flow rule placement in SDIoT? Detailed Answer: Mobi-Flow has been proposed to provide a solution for mobility-aware flow rule placement. Refer Lecture 36@13:09 onwards",
+      "question": "Which among the following is a solution for mobility-aware flow rule placement in SDIoT?",
       "options": {
         "a": "Mobility-Flow",
         "b": "Mobile-Flow",
@@ -8326,7 +8326,7 @@
     },
     {
       "question_number": 8,
-      "question": "Which of the following type of client requires constant communication/connection with the cloud server? Detailed Answer : A thin client is a network computer without a hard disk drive and high configurations. They act as simple terminals and require constant communication with the servers. (Please refer Lecture 37@20:00)",
+      "question": "Which of the following type of client requires constant communication/connection with the cloud server?",
       "options": {
         "a": "Thin client",
         "b": "Thick client",
@@ -8664,7 +8664,7 @@
     },
     {
       "question_number": 12,
-      "question": "How many different types of caching mechanism are there in sensor cloud? Detailed Answer: Internal Cache (IC) and External Cache (EC) are two different types of caching mechanisms used in sensor cloud. Refer lecture 43, ppt No. 13",
+      "question": "How many different types of caching mechanism are there in sensor cloud?",
       "options": {
         "a": "1",
         "b": "4",
@@ -8930,7 +8930,7 @@
     },
     {
       "question_number": 12,
-      "question": "Mobility of vehicles in a V2X environment limit which of the following that restricts the use of TCP/IP for V2X communication? Detailed Answer: TCP/IP works best with localized data, which is not present in V2X environments. This restricts the use of TCP/IP for V2X communication. Refer Lecture 49@12:33 onward.",
+      "question": "Mobility of vehicles in a V2X environment limit which of the following that restricts the use of TCP/IP for V2X communication?",
       "options": {
         "a": "Communication between vehicular infrastructure",
         "b": "Localization of data",
