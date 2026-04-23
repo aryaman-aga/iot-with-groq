@@ -391,6 +391,15 @@
       }
 
       updateQuestionNavButtons();
+
+      // Auto-advance if correct
+      if (data.correct) {
+        setTimeout(() => {
+          if (state.currentQuestionIndex === data.answered_questions && !quizPanel.classList.contains("hidden")) {
+            moveToNextStep();
+          }
+        }, 1200);
+      }
     } catch (error) {
       showFeedback(error.message || "Could not submit answer.", "bad");
       state.locked = false;
