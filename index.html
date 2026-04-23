@@ -23,7 +23,7 @@
         }
       })();
     </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <link rel="stylesheet" href="static/css/styles.css" />
   </head>
   <body>
     <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -62,6 +62,7 @@
         </div>
 
         <div class="source-grid" id="sourceGrid">
+          <!-- Dynamically populated from JS -->
           <div class="loading-state">Loading questions...</div>
         </div>
 
@@ -74,7 +75,9 @@
             <button id="selectAllWeeksBtn" class="pill-btn" type="button">Select All Weeks</button>
             <button id="clearAllWeeksBtn" class="pill-btn" type="button">Clear All</button>
           </div>
-          <div id="weekGrid" class="week-grid"></div>
+          <div id="weekGrid" class="week-grid">
+            <!-- Dynamically populated -->
+          </div>
         </div>
 
         <div class="setup-controls">
@@ -136,6 +139,6 @@
       </section>
     </main>
 
-    <script defer src="{{ url_for('static', filename='js/app.js') }}?v=2.0.1"></script>
+    <script defer src="static/js/app.js?v=2.0.0"></script>
   </body>
 </html>

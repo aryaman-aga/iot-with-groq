@@ -1,8 +1,12 @@
 (() => {
+  // DOM Elements
   const setupPanel = document.getElementById("setupPanel");
   const quizPanel = document.getElementById("quizPanel");
   const resultPanel = document.getElementById("resultPanel");
   const heroMetrics = document.getElementById("heroMetrics");
+  const totalQuestionsCount = document.getElementById("totalQuestionsCount");
+  const totalSetsCount = document.getElementById("totalSetsCount");
+  const sourceGrid = document.getElementById("sourceGrid");
 
   const startQuizBtn = document.getElementById("startQuizBtn");
   const shuffleToggle = document.getElementById("shuffleToggle");
@@ -32,80 +36,86 @@
   const selectAllWeeksBtn = document.getElementById("selectAllWeeksBtn");
   const clearAllWeeksBtn = document.getElementById("clearAllWeeksBtn");
 
+  // State
   const state = {
-    quizId: "",
-    totalQuestions: 0,
-    currentQuestionIndex: 0,
-    activeQuestionIndex: 0,
+    allQuestions: [],
+    questionLookup: {},
+    sources: [],
+    sourceWeeks: {},
+    
+    quizQuestionIds: [],
+    currentQuestionIndex: 0, // 1-based
+    activeQuestionIndex: 0, // max index reached
     score: 0,
-    currentQuestion: null,
-    finalSummary: null,
+    answerLog: [],
     locked: false,
     secretCode: "",
+    shuffleOptions: false,
   };
 
-  const STORAGE_KEY = "iiot-quiz-state";
+  const STORAGE_KEY = "iiot-quiz-state-static";
 
-  function saveProgress() {
+  // Initialization
+  async function init() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        quizId: state.quizId,
-        secretCode: state.secretCode,
-      }));
-    } catch (e) {
-      console.warn("Could not save progress:", e);
+      const response = await fetch("quiz_data/questions.json");
+      const data = await response.json();
+      
+      state.allQuestions = data.questions;
+      state.sources = data.sources;
+      
+      // Build lookups
+      state.questionLookup = {};
+      state.allQuestions.forEach(q => {
+        state.questionLookup[q.id] = q;
+      });
+
+      // Build source weeks
+      state.sourceWeeks = {};
+      state.allQuestions.forEach(q => {
+        if (q.week) {
+          if (!state.sourceWeeks[q.source_id]) {
+            state.sourceWeeks[q.source_id] = new Set();
+          }
+          state.sourceWeeks[q.source_id].add(parseInt(q.week));
+        }
+      });
+      // Convert sets to sorted lists
+      for (const id in state.sourceWeeks) {
+        state.sourceWeeks[id] = Array.from(state.sourceWeeks[id]).sort((a, b) => a - b);
+      }
+
+      renderSetupPanel();
+      resumeSession();
+    } catch (error) {
+      console.error("Failed to load quiz data:", error);
+      if (sourceGrid) {
+        sourceGrid.innerHTML = `<div class="error">Failed to load quiz data. Please refresh.</div>`;
+      }
     }
   }
 
-  function clearProgress() {
-    localStorage.removeItem(STORAGE_KEY);
-  }
+  function renderSetupPanel() {
+    if (totalQuestionsCount) totalQuestionsCount.textContent = state.allQuestions.length;
+    if (totalSetsCount) totalSetsCount.textContent = state.sources.length;
 
-  function getCurrentTheme() {
-    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-  }
+    if (sourceGrid) {
+      sourceGrid.innerHTML = state.sources.map(source => `
+        <label class="source-tile">
+          <input type="checkbox" class="source-checkbox" value="${source.source_id}" checked />
+          <span class="tile-heading">${source.label}</span>
+          <span class="tile-sub">${source.question_count} questions</span>
+        </label>
+      `).join("");
 
-  function updateThemeToggleUi(theme) {
-    if (!themeToggleBtn) {
-      return;
+      // Add listeners to new checkboxes
+      document.querySelectorAll(".source-checkbox").forEach(cb => {
+        cb.addEventListener("change", updateWeekGrid);
+      });
     }
 
-    const isDark = theme === "dark";
-    themeToggleBtn.textContent = isDark ? "Switch to Light" : "Switch to Dark";
-    themeToggleBtn.setAttribute("aria-pressed", isDark ? "true" : "false");
-  }
-
-  function applyTheme(theme) {
-    const resolvedTheme = theme === "dark" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", resolvedTheme);
-    try {
-      window.localStorage.setItem("iiot-theme", resolvedTheme);
-    } catch (_) {
-      // Ignore storage failures in private browsing modes.
-    }
-    updateThemeToggleUi(resolvedTheme);
-  }
-
-  function toggleTheme() {
-    const nextTheme = getCurrentTheme() === "dark" ? "light" : "dark";
-    applyTheme(nextTheme);
-  }
-
-  function getSelectedSources() {
-    return Array.from(document.querySelectorAll(".source-checkbox:checked")).map(
-      (checkbox) => checkbox.value,
-    );
-  }
-
-  function setQuizModeUi(isQuizActive) {
-    if (!heroMetrics) {
-      return;
-    }
-    heroMetrics.classList.toggle("hidden", isQuizActive);
-  }
-
-  function setSetupError(message) {
-    setupError.textContent = message;
+    if (startQuizBtn) startQuizBtn.disabled = false;
+    updateWeekGrid();
   }
 
   function updateWeekGrid() {
@@ -117,7 +127,7 @@
 
     const availableWeeks = new Set();
     selectedSources.forEach(sourceId => {
-      const weeks = window.SOURCE_WEEKS[sourceId] || [];
+      const weeks = state.sourceWeeks[sourceId] || [];
       weeks.forEach(w => availableWeeks.add(w));
     });
 
@@ -127,528 +137,340 @@
     }
 
     const sortedWeeks = Array.from(availableWeeks).sort((a, b) => a - b);
-    weekGrid.innerHTML = "";
-    
-    sortedWeeks.forEach(week => {
-      const label = document.createElement("label");
-      label.className = "week-tile";
-      label.innerHTML = `
+    weekGrid.innerHTML = sortedWeeks.map(week => `
+      <label class="week-tile">
         <input type="checkbox" class="week-checkbox" value="${week}" checked />
         <span>Week ${week}</span>
-      `;
-      weekGrid.appendChild(label);
-    });
+      </label>
+    `).join("");
 
     weekSelectionSection.classList.remove("hidden");
   }
 
+  function getSelectedSources() {
+    return Array.from(document.querySelectorAll(".source-checkbox:checked")).map(cb => cb.value);
+  }
+
   function getSelectedWeeks() {
-    return Array.from(document.querySelectorAll(".week-checkbox:checked")).map(
-      (checkbox) => parseInt(checkbox.value, 10),
+    return Array.from(document.querySelectorAll(".week-checkbox:checked")).map(cb => parseInt(cb.value));
+  }
+
+  // Quiz Logic
+  function startQuiz() {
+    const selectedSources = getSelectedSources();
+    const selectedWeeks = getSelectedWeeks();
+    
+    if (!selectedSources.length) {
+      setSetupError("Pick at least one question set to start.");
+      return;
+    }
+
+    let filtered = state.allQuestions.filter(q => 
+      selectedSources.includes(q.source_id) && 
+      (selectedWeeks.length === 0 || selectedWeeks.includes(parseInt(q.week)))
     );
-  }
 
-  function clearFeedback() {
-    feedbackBanner.classList.add("hidden");
-    feedbackBanner.classList.remove("ok", "bad");
-    feedbackBanner.textContent = "";
-  }
-
-  function showFeedback(message, status) {
-    feedbackBanner.textContent = message;
-    feedbackBanner.classList.remove("hidden", "ok", "bad");
-    feedbackBanner.classList.add(status === "ok" ? "ok" : "bad");
-  }
-
-  function updateQuestionNavButtons() {
-    if (!prevQuestionBtn || !nextQuestionBtn || !state.quizId) {
+    if (filtered.length === 0) {
+      setSetupError("No questions found for the selected filters.");
       return;
     }
 
-    const isLastQuestion = state.currentQuestionIndex === state.totalQuestions;
-    const isAnswered = state.locked;
-
-    if (isLastQuestion && isAnswered) {
-      nextQuestionBtn.dataset.mode = "finish";
-      nextQuestionBtn.textContent = "View Result";
-      nextQuestionBtn.disabled = false;
-      nextQuestionBtn.classList.remove("hidden");
-      prevQuestionBtn.disabled = state.currentQuestionIndex <= 1;
-      return;
+    let questionIds = filtered.map(q => q.id);
+    if (shuffleToggle.checked) {
+      shuffleArray(questionIds);
     }
 
+    state.quizQuestionIds = questionIds;
+    state.currentQuestionIndex = 1;
+    state.activeQuestionIndex = 1;
+    state.score = 0;
+    state.answerLog = [];
+    state.shuffleOptions = shuffleOptionsToggle.checked;
+    state.locked = false;
 
-    prevQuestionBtn.disabled = state.currentQuestionIndex <= 1;
-
-    const canMoveNext = state.currentQuestionIndex < state.activeQuestionIndex;
-    nextQuestionBtn.dataset.mode = "navigate";
-    nextQuestionBtn.textContent = "Next Question";
-    nextQuestionBtn.classList.remove("hidden");
-    nextQuestionBtn.disabled = !canMoveNext;
+    setupPanel.classList.add("hidden");
+    quizPanel.classList.remove("hidden");
+    setQuizModeUi(true);
+    
+    renderQuestion(1);
+    saveProgress();
   }
 
-  function renderQuestion(question, questionIndex) {
-    state.currentQuestion = question;
-    state.currentQuestionIndex = questionIndex;
+  function renderQuestion(index) {
+    state.currentQuestionIndex = index;
+    const questionId = state.quizQuestionIds[index - 1];
+    const q = state.questionLookup[questionId];
+    
+    if (!q) return;
 
-    progressPill.textContent = `Question ${questionIndex} / ${state.totalQuestions}`;
-    scoreValue.textContent = String(state.score);
-    const resolvedWeek = Number.isInteger(question.week)
-      ? `Week ${question.week}`
-      : String(question.week || "").trim()
-        ? `Week ${String(question.week).trim()}`
-        : "Week Unknown";
-    if (weekTag) {
-      weekTag.textContent = resolvedWeek;
-    }
-    sourceBadge.textContent = `${question.source_label} | Question ${question.question_number}`;
+    // Update UI
+    progressPill.textContent = `Question ${index} / ${state.quizQuestionIds.length}`;
+    scoreValue.textContent = state.score;
+    weekTag.textContent = q.week ? `Week ${q.week}` : "Week Unknown";
+    sourceBadge.textContent = `${q.source_label} | Question ${q.question_number}`;
     
     if (githubPdfLink) {
-      if (question.source_file && question.page) {
-        // Replace 'iot-with-groq' if your new repo name is different
+      if (q.source_file && q.page) {
         const githubRepo = "aryaman-aga/iot-with-groq";
-        githubPdfLink.href = `https://github.com/${githubRepo}/blob/main/${encodeURIComponent(question.source_file)}#page=${question.page}`;
-        githubPdfLink.textContent = `View Page ${question.page} on GitHub`;
+        githubPdfLink.href = `https://github.com/${githubRepo}/blob/main/${encodeURIComponent(q.source_file)}#page=${q.page}`;
+        githubPdfLink.textContent = `View Page ${q.page} on GitHub`;
         githubPdfLink.classList.remove("hidden");
       } else {
         githubPdfLink.classList.add("hidden");
       }
     }
 
-    questionText.textContent = question.text;
+    questionText.textContent = q.question;
 
-    optionsContainer.innerHTML = "";
-    question.options.forEach((option) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "option-btn";
-      button.dataset.option = option.key;
-      button.innerHTML = `<span class="option-key">${option.key.toUpperCase()}</span><span>${option.text}</span>`;
-      optionsContainer.appendChild(button);
-    });
+    // Options
+    let options = Object.entries(q.options).map(([key, text]) => ({ key, text }));
+    if (state.shuffleOptions) {
+      // Use a seed based on quizId and questionId to keep it consistent if revisited
+      shuffleArray(options);
+    }
 
-    state.locked = false;
-    nextQuestionBtn.dataset.mode = "navigate";
+    optionsContainer.innerHTML = options.map(opt => `
+      <button type="button" class="option-btn" data-option="${opt.key}">
+        <span class="option-key">${opt.key.toUpperCase()}</span>
+        <span>${opt.text}</span>
+      </button>
+    `).join("");
+
     clearFeedback();
-    updateQuestionNavButtons();
+    state.locked = false;
+
+    // Check if already answered
+    const logged = state.answerLog.find(a => a.questionId === questionId);
+    if (logged) {
+      markAnswered(logged.selectedOption, q.answer, q.options[q.answer], logged.correct);
+    }
+
+    updateNavigationButtons();
   }
 
-  function markAnsweredOptions(selectedOption, correctOption) {
-    const optionButtons = optionsContainer.querySelectorAll(".option-btn");
-    optionButtons.forEach((button) => {
-      const option = button.dataset.option;
-      button.disabled = true;
-      if (option === selectedOption && option === correctOption) {
-        button.classList.add("correct");
-      } else if (option === selectedOption && option !== correctOption) {
-        button.classList.add("wrong");
-      } else if (option === correctOption) {
-        button.classList.add("correct");
-      }
+  function submitAnswer(selectedOption) {
+    if (state.locked) return;
+    
+    const questionId = state.quizQuestionIds[state.currentQuestionIndex - 1];
+    const q = state.questionLookup[questionId];
+    const correctOption = q.answer;
+    const isCorrect = selectedOption === correctOption;
+
+    if (isCorrect) state.score++;
+    
+    state.answerLog.push({
+      questionId,
+      selectedOption,
+      correct: isCorrect
     });
 
-    state.locked = true;
-    updateQuestionNavButtons();
+    state.activeQuestionIndex = Math.max(state.activeQuestionIndex, state.currentQuestionIndex + 1);
+    
+    markAnswered(selectedOption, correctOption, q.options[correctOption], isCorrect);
+    
+    if (isCorrect) {
+      setTimeout(() => {
+        if (state.currentQuestionIndex < state.quizQuestionIds.length && !state.locked) {
+           // Auto advance if they haven't moved yet
+        }
+      }, 1500);
+    }
+    
+    saveProgress();
   }
 
-  function renderAnsweredState(data) {
-    markAnsweredOptions(data.selected_option, data.correct_option);
+  function markAnswered(selectedOption, correctOption, correctText, isCorrect) {
+    state.locked = true;
+    const buttons = optionsContainer.querySelectorAll(".option-btn");
+    buttons.forEach(btn => {
+      btn.disabled = true;
+      const opt = btn.dataset.option;
+      if (opt === correctOption) btn.classList.add("correct");
+      else if (opt === selectedOption) btn.classList.add("wrong");
+    });
 
-    if (data.correct) {
+    if (isCorrect) {
       showFeedback("Correct answer. Great work.", "ok");
     } else {
-      let message = `Wrong answer. Correct option: ${data.correct_option.toUpperCase()} - ${data.correct_option_text}`;
-      showFeedback(message, "bad");
+      showFeedback(`Wrong answer. Correct option: ${correctOption.toUpperCase()} - ${correctText}`, "bad");
     }
 
-    // Fetch AI explanation asynchronously for all answers if secret code is set
-    if (state.currentQuestion) {
-      fetchExplanation(state.currentQuestion.id, data.selected_option);
+    // Show explanation if secret code matches
+    const q = state.questionLookup[state.quizQuestionIds[state.currentQuestionIndex - 1]];
+    if (state.secretCode === "arya21" && q.explanation) {
+      feedbackBanner.innerHTML += `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1); font-weight: normal; font-size: 0.9em;">${q.explanation}</div>`;
+    }
+
+    updateNavigationButtons();
+  }
+
+  function updateNavigationButtons() {
+    const isLast = state.currentQuestionIndex === state.quizQuestionIds.length;
+    const isAnswered = state.answerLog.some(a => a.questionId === state.quizQuestionIds[state.currentQuestionIndex - 1]);
+
+    prevQuestionBtn.disabled = state.currentQuestionIndex <= 1;
+    
+    if (isLast && isAnswered) {
+      nextQuestionBtn.textContent = "View Result";
+      nextQuestionBtn.classList.remove("hidden");
+      nextQuestionBtn.disabled = false;
+    } else if (state.currentQuestionIndex < state.activeQuestionIndex) {
+      nextQuestionBtn.textContent = "Next Question";
+      nextQuestionBtn.classList.remove("hidden");
+      nextQuestionBtn.disabled = false;
+    } else {
+      nextQuestionBtn.classList.add("hidden");
     }
   }
 
-  async function fetchExplanation(questionId, selectedOption) {
-    try {
-      const response = await fetch("/api/explanation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question_id: questionId,
-          selected_option: selectedOption,
-          secret_code: state.secretCode,
-        }),
-      });
+  function showFinalSummary() {
+    quizPanel.classList.add("hidden");
+    resultPanel.classList.remove("hidden");
+    setQuizModeUi(false);
 
-      const data = await response.json();
-      if (response.ok && data.explanation) {
-        // Append explanation to existing feedback
-        feedbackBanner.textContent += `\n\n${data.explanation}`;
-      }
-    } catch (error) {
-      // Silently fail - explanation is optional
-      console.log("Could not fetch explanation:", error.message);
+    const total = state.quizQuestionIds.length;
+    const percent = Math.round((state.score / total) * 100);
+    finalScoreText.textContent = `You scored ${state.score} out of ${total} (${percent}%).`;
+
+    // Breakdown
+    const stats = {};
+    state.answerLog.forEach(log => {
+      const q = state.questionLookup[log.questionId];
+      if (!stats[q.source_id]) stats[q.source_id] = { label: q.source_label, correct: 0, total: 0 };
+      stats[q.source_id].total++;
+      if (log.correct) stats[q.source_id].correct++;
+    });
+
+    sourceBreakdown.innerHTML = Object.values(stats).map(s => `
+      <article class="breakdown-card">
+        <h3>${s.label}</h3>
+        <p>${s.correct} / ${s.total} correct</p>
+      </article>
+    `).join("");
+
+    clearProgress();
+  }
+
+  // Helpers
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
     }
   }
 
-  async function resumeSession() {
+  function setQuizModeUi(active) {
+    if (heroMetrics) heroMetrics.classList.toggle("hidden", active);
+  }
+
+  function setSetupError(msg) {
+    setupError.textContent = msg;
+  }
+
+  function clearFeedback() {
+    feedbackBanner.classList.add("hidden");
+    feedbackBanner.classList.remove("ok", "bad");
+    feedbackBanner.innerHTML = "";
+  }
+
+  function showFeedback(msg, type) {
+    feedbackBanner.textContent = msg;
+    feedbackBanner.classList.remove("hidden", "ok", "bad");
+    feedbackBanner.classList.add(type);
+  }
+
+  function saveProgress() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      questionIds: state.quizQuestionIds,
+      currentQuestionIndex: state.currentQuestionIndex,
+      activeQuestionIndex: state.activeQuestionIndex,
+      score: state.score,
+      answerLog: state.answerLog,
+      shuffleOptions: state.shuffleOptions,
+      secretCode: state.secretCode
+    }));
+  }
+
+  function resumeSession() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return;
-
     try {
-      const { quizId, secretCode } = JSON.parse(saved);
-      if (!quizId) return;
-
-      state.quizId = quizId;
-      state.secretCode = secretCode;
-
-      // Sync secret code UI
-      if (secretCode === "arya21" && groqSecretCode) {
-        groqSecretCode.value = secretCode;
-        groqSecretCode.style.boxShadow = "0 0 10px 2px rgba(16, 185, 129, 0.6)";
-        groqSecretCode.style.borderColor = "rgba(16, 185, 129, 0.8)";
-        groqSecretCode.style.opacity = "0.8";
-      }
-
-      // Try to fetch current state from server
-      const response = await fetch("/api/question", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quiz_id: quizId,
-          question_index: 1, // Start by checking if session exists
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        clearProgress();
-        return;
-      }
-
-      // If session exists, we can resume. Let's find the current active question.
-      state.totalQuestions = data.total_questions;
-      state.score = data.score;
-      state.activeQuestionIndex = data.active_question_index;
+      const data = JSON.parse(saved);
+      Object.assign(state, data);
       
-      setupPanel.classList.add("hidden");
-      quizPanel.classList.remove("hidden");
-      setQuizModeUi(true);
-
-      // Load the active question
-      fetchQuestion(data.active_question_index);
-    } catch (e) {
-      console.warn("Failed to resume session:", e);
-      clearProgress();
-    }
-  }
-
-  async function fetchQuestion(questionIndex) {
-    if (!state.quizId) {
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/question", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quiz_id: state.quizId,
-          question_index: questionIndex,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Could not load question.");
-      }
-
-      state.totalQuestions = data.total_questions;
-      state.score = data.score;
-      state.activeQuestionIndex = data.active_question_index;
-      renderQuestion(data.question, data.current_question_index);
-
-      if (data.answered) {
-        renderAnsweredState(data);
-      }
-    } catch (error) {
-      showFeedback(error.message || "Could not load question.", "bad");
-    }
-  }
-
-  async function startQuiz() {
-    setSetupError("");
-
-    const selectedSources = getSelectedSources();
-    if (!selectedSources.length) {
-      setSetupError("Pick at least one question set to start.");
-      return;
-    }
-
-    startQuizBtn.disabled = true;
-
-    try {
-      const response = await fetch("/api/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sources: selectedSources,
-          weeks: getSelectedWeeks(),
-          shuffle: shuffleToggle.checked,
-          shuffle_options: shuffleOptionsToggle.checked,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Could not start quiz.");
-      }
-
-      state.quizId = data.quiz_id;
-      state.totalQuestions = data.total_questions;
-      state.score = data.score;
-      state.activeQuestionIndex = data.active_question_index || 1;
-      state.finalSummary = null;
-
-      setupPanel.classList.add("hidden");
-      resultPanel.classList.add("hidden");
-      quizPanel.classList.remove("hidden");
-      setQuizModeUi(true);
-
-      saveProgress();
-      renderQuestion(data.question, data.current_question_index);
-    } catch (error) {
-      setSetupError(error.message || "Could not start quiz.");
-      startQuizBtn.disabled = false;
-      return;
-    }
-
-    startQuizBtn.disabled = false;
-  }
-
-  async function submitAnswer(selectedOption) {
-    if (!state.quizId || !state.currentQuestion) {
-      return;
-    }
-
-    state.locked = true;
-
-    try {
-      const response = await fetch("/api/answer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quiz_id: state.quizId,
-          question_id: state.currentQuestion.id,
-          selected_option: selectedOption,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Could not submit answer.");
-      }
-
-      state.score = data.score;
-      state.activeQuestionIndex = data.active_question_index || state.activeQuestionIndex;
-      scoreValue.textContent = String(state.score);
-
-      renderAnsweredState(data);
-
-      if (data.finished) {
-        clearProgress();
-        state.finalSummary = data.summary;
-        nextQuestionBtn.textContent = "View Result";
-        nextQuestionBtn.dataset.mode = "finish";
-        nextQuestionBtn.disabled = false;
-        nextQuestionBtn.classList.remove("hidden");
-        if (prevQuestionBtn) {
-          prevQuestionBtn.disabled = true;
-        }
-        return;
-      }
-
-      updateQuestionNavButtons();
-
-      // Auto-advance if correct
-      if (data.correct) {
-        setTimeout(() => {
-          if (state.currentQuestionIndex === data.answered_questions && !quizPanel.classList.contains("hidden")) {
-            moveToNextStep();
-          }
-        }, 1200);
-      }
-    } catch (error) {
-      showFeedback(error.message || "Could not submit answer.", "bad");
-      state.locked = false;
-      return;
-    }
-  }
-
-  function renderFinalSummary() {
-    if (!state.finalSummary) {
-      return;
-    }
-
-    const { score, total, percent, source_breakdown: sourceBreakdownData, week_breakdown: weekBreakdownData } = state.finalSummary;
-    finalScoreText.textContent = `You scored ${score} out of ${total} (${percent}%).`;
-
-    // Revision suggestions
-    const weeksToRevise = weekBreakdownData.filter(w => (w.correct / w.total) < 0.75);
-    
-    sourceBreakdown.innerHTML = "";
-    
-    // Add revision alert if needed
-    if (weeksToRevise.length > 0) {
-        const revisionCard = document.createElement("article");
-        revisionCard.className = "breakdown-card revision-card";
-        revisionCard.innerHTML = `
-            <h3 style="color: var(--bad)">📚 Revision Needed</h3>
-            <p>You scored less than 75% in the following weeks:</p>
-            <div class="revision-pills">
-                ${weeksToRevise.map(w => `<span class="week-pill">Week ${w.week}</span>`).join("")}
-            </div>
-        `;
-        sourceBreakdown.appendChild(revisionCard);
-    } else if (percent >= 90) {
-        const congratsCard = document.createElement("article");
-        congratsCard.className = "breakdown-card congrats-card";
-        congratsCard.innerHTML = `
-            <h3 style="color: var(--ok)">🌟 Excellence!</h3>
-            <p>You have a strong grasp of all selected weeks. Keep it up!</p>
-        `;
-        sourceBreakdown.appendChild(congratsCard);
-    }
-
-    sourceBreakdownData.forEach((entry) => {
-      const card = document.createElement("article");
-      card.className = "breakdown-card";
-      card.innerHTML = `
-        <h3>${entry.source_label}</h3>
-        <p>${entry.correct} / ${entry.total} correct</p>
-      `;
-      sourceBreakdown.appendChild(card);
-    });
-  }
-
-  function moveToNextStep() {
-    const mode = nextQuestionBtn.dataset.mode;
-    if (mode === "finish") {
-      quizPanel.classList.add("hidden");
-      resultPanel.classList.remove("hidden");
-      setQuizModeUi(false);
-      renderFinalSummary();
-      return;
-    }
-
-    if (mode === "navigate" && state.currentQuestionIndex < state.activeQuestionIndex) {
-      fetchQuestion(state.currentQuestionIndex + 1);
-    }
-  }
-
-  function moveToPreviousQuestion() {
-    if (state.currentQuestionIndex <= 1) {
-      return;
-    }
-    fetchQuestion(state.currentQuestionIndex - 1);
-  }
-
-  function goBackToSetup() {
-    const hasLiveQuiz = !quizPanel.classList.contains("hidden") && !!state.quizId;
-    if (hasLiveQuiz) {
-      const shouldLeave = window.confirm(
-        "Go back to setup? Your current quiz progress will be lost.",
-      );
-      if (!shouldLeave) {
-        return;
-      }
-    }
-
-    resetToSetup();
-  }
-
-  function resetToSetup() {
-    state.quizId = "";
-    state.totalQuestions = 0;
-    state.currentQuestionIndex = 0;
-    state.activeQuestionIndex = 0;
-    state.score = 0;
-    state.currentQuestion = null;
-    state.finalSummary = null;
-    state.locked = false;
-
-    clearFeedback();
-    resultPanel.classList.add("hidden");
-    quizPanel.classList.add("hidden");
-    setupPanel.classList.remove("hidden");
-    setQuizModeUi(false);
-    setSetupError("");
-  }
-
-  startQuizBtn.addEventListener("click", startQuiz);
-
-  optionsContainer.addEventListener("click", (event) => {
-    const button = event.target.closest(".option-btn");
-    if (!button || state.locked) {
-      return;
-    }
-    submitAnswer(button.dataset.option);
-  });
-
-  nextQuestionBtn.addEventListener("click", moveToNextStep);
-  if (prevQuestionBtn) {
-    prevQuestionBtn.addEventListener("click", moveToPreviousQuestion);
-  }
-  backToSetupBtn.addEventListener("click", goBackToSetup);
-  restartBtn.addEventListener("click", resetToSetup);
-
-  if (groqSecretCode) {
-    groqSecretCode.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        const val = groqSecretCode.value.trim();
-        state.secretCode = val;
+      if (state.quizQuestionIds.length > 0) {
+        setupPanel.classList.add("hidden");
+        quizPanel.classList.remove("hidden");
+        setQuizModeUi(true);
+        renderQuestion(state.currentQuestionIndex);
         
-        if (val === "arya21") {
-          // Success glow
+        // Sync secret code UI
+        if (state.secretCode === "arya21" && groqSecretCode) {
+          groqSecretCode.value = state.secretCode;
           groqSecretCode.style.boxShadow = "0 0 10px 2px rgba(16, 185, 129, 0.6)";
-          groqSecretCode.style.borderColor = "rgba(16, 185, 129, 0.8)";
-          groqSecretCode.style.opacity = "0.8";
-          groqSecretCode.style.transition = "all 0.3s ease";
-        } else {
-          // Subtle error reset
-          groqSecretCode.style.boxShadow = "none";
-          groqSecretCode.style.borderColor = "rgba(255, 255, 255, 0.2)";
-          groqSecretCode.style.opacity = "0";
-          setTimeout(() => groqSecretCode.style.opacity = "0.3", 500);
         }
       }
-    });
+    } catch (e) {
+      console.warn("Failed to resume:", e);
+    }
   }
 
-  if (themeToggleBtn) {
-    updateThemeToggleUi(getCurrentTheme());
-    themeToggleBtn.addEventListener("click", toggleTheme);
+  function clearProgress() {
+    localStorage.removeItem(STORAGE_KEY);
   }
 
-  // Attempt to resume session
-  resumeSession();
+  // Theme Logic
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("iiot-theme", theme);
+    if (themeToggleBtn) themeToggleBtn.textContent = theme === "dark" ? "Switch to Light" : "Switch to Dark";
+  }
 
-  // Initial week grid population
-  updateWeekGrid();
-
-  // Source change listener
-  document.querySelectorAll(".source-checkbox").forEach(checkbox => {
-    checkbox.addEventListener("change", updateWeekGrid);
+  // Event Listeners
+  startQuizBtn.addEventListener("click", startQuiz);
+  
+  optionsContainer.addEventListener("click", e => {
+    const btn = e.target.closest(".option-btn");
+    if (btn && !state.locked) submitAnswer(btn.dataset.option);
   });
 
-  if (selectAllWeeksBtn) {
-    selectAllWeeksBtn.addEventListener("click", () => {
-      document.querySelectorAll(".week-checkbox").forEach(cb => cb.checked = true);
-    });
-  }
+  nextQuestionBtn.addEventListener("click", () => {
+    if (state.currentQuestionIndex < state.quizQuestionIds.length) {
+      renderQuestion(state.currentQuestionIndex + 1);
+    } else {
+      showFinalSummary();
+    }
+  });
 
-  if (clearAllWeeksBtn) {
-    clearAllWeeksBtn.addEventListener("click", () => {
-      document.querySelectorAll(".week-checkbox").forEach(cb => cb.checked = false);
-    });
-  }
+  prevQuestionBtn.addEventListener("click", () => {
+    if (state.currentQuestionIndex > 1) renderQuestion(state.currentQuestionIndex - 1);
+  });
+
+  backToSetupBtn.addEventListener("click", () => {
+    if (confirm("Exit quiz? Progress will be lost.")) {
+      clearProgress();
+      location.reload();
+    }
+  });
+
+  restartBtn.addEventListener("click", () => location.reload());
+
+  themeToggleBtn.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme");
+    applyTheme(current === "dark" ? "light" : "dark");
+  });
+
+  groqSecretCode.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      state.secretCode = groqSecretCode.value.trim();
+      if (state.secretCode === "arya21") {
+        groqSecretCode.style.boxShadow = "0 0 10px 2px rgba(16, 185, 129, 0.6)";
+        // If already answered, re-render to show explanation
+        if (state.locked) renderQuestion(state.currentQuestionIndex);
+      }
+      saveProgress();
+    }
+  });
+
+  init();
 })();

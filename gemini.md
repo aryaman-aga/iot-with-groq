@@ -24,37 +24,26 @@ iot/
 
 ## Core Components
 
-### `app.py`
-This is the entry point of the Flask application. 
-- **Session Management**: Uses an in-memory dictionary (`QUIZ_SESSIONS`) protected by a threading `Lock` to handle concurrent quiz sessions securely.
-- **API Endpoints**:
-  - `GET /`: Renders the main index HTML.
-  - `POST /api/start`: Initializes a new quiz session, allowing source filtering and shuffling.
-  - `POST /api/question`: Retrieves a specific question based on the active session.
-  - `POST /api/answer`: Submits a user's answer, updates the score, and logs the response. Returns quiz summary upon completion.
-  - `POST /api/explanation`: Uses the `Groq` API (`llama-3.3-70b-versatile` model) to asynchronously generate concise explanations when a user gets an answer wrong.
+### Frontend (Static Mode)
+The application has been converted to a **pure static site** for maximum performance and reliability on Vercel.
+- **index.html**: The entry point, now a standalone static file.
+- **static/js/app.js**: Handles all quiz logic entirely in the browser. It fetches `quiz_data/questions.json` once and manages filtering, shuffling, scoring, and navigation without any backend calls.
+- **localStorage**: Used to persist quiz progress and settings across sessions.
 
-### `quiz_loader.py`
-Handles the extraction of quiz data from raw PDF files.
-- **PDF Processing**: Uses `pypdf` to read text from three specific assignment PDFs (`2024 iiot.pdf`, `2026 iiot assignments.pdf`, `Merged IIOT Assignments.pdf`).
-- **Parsing Logic**: Heavy usage of complex Regular Expressions (`re`) to identify question blocks, options (A, B, C, D), correct answers, and detailed solutions.
-- **Caching**: Compiles the parsed questions into a structured payload and saves it to `quiz_data/questions.json` to prevent re-parsing the PDFs on every server startup.
+### quiz_data/questions.json
+The central data store containing all 540 questions across three assignment sets. It now includes pre-generated **AI explanations** for every question, eliminating the need for real-time API calls.
 
-### `diagnostic.py`
-A standalone debugging script used to evaluate the efficiency of the extraction logic. It uses `PyMuPDF` (`fitz`) to count occurrences of "QUESTION" markers and option patterns, comparing them against the finalized questions parsed by `quiz_loader.py` to identify missing or malformed questions.
+### scripts/enrich_explanations.py
+A utility script used to pre-populate the `questions.json` with explanations. It uses local **Ollama** (specifically the `llama3` model) to generate concise technical explanations for each correct answer.
 
-### Frontend (`templates/`, `static/`, `docs/`)
-- Uses standard Jinja2 templates (`base.html`, `index.html`) to render the user interface.
-- Interactions during the quiz are handled dynamically via frontend JavaScript making AJAX calls to the Flask API endpoints.
-- The `docs/` folder allows the static front-end to be deployed directly via GitHub Pages.
-
-## Data Flow
-1. **Extraction Phase**: On startup (or via script), `quiz_loader.py` scans the PDFs, extracts the text, normalizes it, and maps it to a JSON structure in `questions.json`.
-2. **Initialization**: `app.py` loads `questions.json` into memory. 
-3. **Quiz Session**: User selects years/sources on the frontend and starts the quiz. An API call creates a `QuizSession` tracking their progress.
-4. **Interactive Quiz**: The user answers questions. State is validated on the backend. If an answer is wrong, the frontend requests an explanation from the Groq API via the backend.
-5. **Completion**: Upon finishing, a breakdown of performance by source is generated and returned to the user.
+## Data Flow (Static)
+1. **Load Phase**: Browser fetches `index.html` and static assets. `app.js` fetches the enriched `questions.json`.
+2. **Setup**: User selects sources and weeks; `app.js` filters and shuffles the data client-side.
+3. **Quiz Session**: User interacts with the UI. All logic is local.
+4. **Explanations**: If the secret code (`arya21`) is entered, the pre-loaded explanations from the JSON are revealed upon answering.
+5. **Completion**: A breakdown of performance is generated locally.
 
 ## Infrastructure & Deployment
-- **Dependencies**: Uses `Flask`, `gunicorn`, `pypdf`, and `groq` (implied by imports).
-- **Deployment Ready**: The project is pre-configured for deployment on Render via `render.yaml` and Heroku/Generic PaaS via `Procfile`. It also includes a `Dockerfile` for containerized environments.
+- **Platform**: Optimized for **Vercel Static Hosting**.
+- **Configuration**: `vercel.json` handles routing and clean URLs.
+- **Performance**: Near-zero latency as no backend API calls are required during the quiz flow.
