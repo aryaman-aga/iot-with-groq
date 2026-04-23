@@ -685,3 +685,82 @@ body {
     padding: 0.85rem 0.9rem;
   }
 }
+
+/* Week Selection Styles */
+.week-selection-section {
+  margin-top: 1.5rem;
+  padding: 1.2rem;
+  background: var(--card-soft);
+  border: 1px solid var(--card-soft-border);
+  border-radius: 18px;
+  animation: revealUp 0.4s ease both;
+}
+
+.week-controls {
+  margin-top: 0.8rem;
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.pill-btn {
+  border: 1px solid var(--ghost-border);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  background: var(--pill-bg);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pill-btn:hover {
+  border-color: var(--accent-alt);
+  background: var(--ghost-hover-bg);
+}
+
+.week-grid {
+  margin-top: 1.2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.6rem;
+}
+
+.week-tile {
+  position: relative;
+  padding: 0.6rem 0.8rem;
+  background: var(--card-strong);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.week-tile:hover {
+  border-color: var(--accent-alt);
+  transform: translateY(-2px);
+}
+
+.week-tile input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.week-tile span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.week-tile:has(input:checked) {
+  border-color: var(--accent-main);
+  background: rgba(239, 111, 57, 0.1);
+  box-shadow: 0 4px 12px rgba(239, 111, 57, 0.12);
+}
+
+.week-tile:has(input:checked) span {
+  color: var(--accent-main);
+}

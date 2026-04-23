@@ -42,6 +42,20 @@
       {% endfor %}
     </div>
 
+    <div id="weekSelectionSection" class="week-selection-section hidden">
+      <div class="section-head">
+        <h3>Filter by Weeks</h3>
+        <p>Choose specific weeks or "Select All".</p>
+      </div>
+      <div class="week-controls">
+        <button id="selectAllWeeksBtn" class="pill-btn" type="button">Select All Weeks</button>
+        <button id="clearAllWeeksBtn" class="pill-btn" type="button">Clear All</button>
+      </div>
+      <div id="weekGrid" class="week-grid">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+
     <div class="setup-controls">
       <label class="switch-wrap">
         <input type="checkbox" id="shuffleToggle" />
@@ -99,5 +113,9 @@
       <button id="restartBtn" class="primary-btn" type="button">Start Another Quiz</button>
     </div>
   </section>
+
+  <script>
+    window.SOURCE_WEEKS = {{ source_weeks | tojson | safe }};
+  </script>
 </main>
 {% endblock %}

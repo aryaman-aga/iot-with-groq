@@ -48,6 +48,21 @@ QUESTION_LIST: list[dict[str, Any]] = payload["questions"]
 QUESTION_LOOKUP: dict[str, dict[str, Any]] = {question["id"]: question for question in QUESTION_LIST}
 SOURCE_LABEL_LOOKUP: dict[str, str] = {source["source_id"]: source["label"] for source in SOURCE_CATALOG}
 
+# Aggregate available weeks per source
+SOURCE_WEEKS: dict[str, list[int]] = {}
+for q in QUESTION_LIST:
+    s_id = q["source_id"]
+    week = q.get("week")
+    if week is not None:
+        try:
+            week_int = int(week)
+            SOURCE_WEEKS.setdefault(s_id, set()).add(week_int)
+        except (ValueError, TypeError):
+            pass
+
+# Convert sets to sorted lists for JSON serialization
+SOURCE_WEEKS_SERIALIZABLE = {k: sorted(list(v)) for k, v in SOURCE_WEEKS.items()}
+
 
 @dataclass
 class QuizSession:
@@ -66,15 +81,41 @@ QUIZ_SESSIONS: dict[str, QuizSession] = {}
 QUIZ_LOCK = Lock()
 
 app = Flask(__name__)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000
+
+
+@app.after_request
+def add_header(response):
+    """Add cache control headers to static files."""
+    if 'Cache-Control' not in response.headers:
+        if request.path.startswith('/static/'):
+            response.headers['Cache-Control'] = 'public, max-age=31536000'
+    return response
 
 
 def _get_groq_explanation(question: dict[str, Any], selected_option: str, correct_option: str) -> str | None:
-    """Get AI explanation from Groq for a wrong answer."""
+    """Get AI explanation from Groq for an answer."""
     if not GROQ_CLIENT:
         return None
 
+    is_correct = selected_option == correct_option
     try:
-        prompt = f"""The user answered incorrectly on this question:
+        if is_correct:
+            prompt = f"""The user answered CORRECTLY on this question:
+
+Question: {question['question']}
+
+Options:
+A) {question['options']['a']}
+B) {question['options']['b']}
+C) {question['options']['c']}
+D) {question['options']['d']}
+
+The user selected the correct answer: {selected_option.upper()}) {question['options'][selected_option]}
+
+Briefly explain why this answer is correct. Be concise (2-3 sentences)."""
+        else:
+            prompt = f"""The user answered INCORRECTLY on this question:
 
 Question: {question['question']}
 
@@ -162,6 +203,7 @@ def index() -> str:
     return render_template(
         "index.html",
         sources=SOURCE_CATALOG,
+        source_weeks=SOURCE_WEEKS_SERIALIZABLE,
         total_questions=len(QUESTION_LIST),
     )
 
@@ -175,14 +217,26 @@ def health() -> tuple[dict[str, str], int]:
 def start_quiz() -> Any:
     body = request.get_json(silent=True) or {}
     selected_sources = _normalize_source_selection(body.get("sources", []))
+    selected_weeks = body.get("weeks")  # Expecting a list of integers or None for "all"
     shuffle_enabled = bool(body.get("shuffle", False))
     shuffle_options_enabled = bool(body.get("shuffle_options", False))
 
     selected_questions = [
         question for question in QUESTION_LIST if question["source_id"] in selected_sources
     ]
+
+    # Apply week filtering if specified
+    if isinstance(selected_weeks, list) and selected_weeks:
+        try:
+            week_ints = [int(w) for w in selected_weeks]
+            selected_questions = [
+                q for q in selected_questions if q.get("week") in week_ints
+            ]
+        except (ValueError, TypeError):
+            pass
+
     if not selected_questions:
-        return jsonify({"error": "No questions available for selected sources."}), 400
+        return jsonify({"error": "No questions available for selected sources/weeks."}), 400
 
     question_ids = [question["id"] for question in selected_questions]
     if shuffle_enabled:
@@ -364,9 +418,11 @@ def get_explanation() -> Any:
         return jsonify({"error": "Question not found."}), 404
 
     correct_option = question["answer"]
-    if selected_option == correct_option:
-        return jsonify({"explanation": None}), 200
-
+    
+    # If the answer is correct, we ONLY show an explanation if the secret code is correct
+    # (incorrect answers already show explanations if the code is correct)
+    # The frontend calls this for all answers now.
+    
     explanation = _get_groq_explanation(question, selected_option, correct_option)
     return jsonify({"explanation": explanation})
 

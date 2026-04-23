@@ -27,6 +27,11 @@
   const restartBtn = document.getElementById("restartBtn");
   const groqSecretCode = document.getElementById("groqSecretCode");
 
+  const weekSelectionSection = document.getElementById("weekSelectionSection");
+  const weekGrid = document.getElementById("weekGrid");
+  const selectAllWeeksBtn = document.getElementById("selectAllWeeksBtn");
+  const clearAllWeeksBtn = document.getElementById("clearAllWeeksBtn");
+
   const state = {
     quizId: "",
     totalQuestions: 0,
@@ -84,6 +89,46 @@
 
   function setSetupError(message) {
     setupError.textContent = message;
+  }
+
+  function updateWeekGrid() {
+    const selectedSources = getSelectedSources();
+    if (!selectedSources.length) {
+      weekSelectionSection.classList.add("hidden");
+      return;
+    }
+
+    const availableWeeks = new Set();
+    selectedSources.forEach(sourceId => {
+      const weeks = window.SOURCE_WEEKS[sourceId] || [];
+      weeks.forEach(w => availableWeeks.add(w));
+    });
+
+    if (availableWeeks.size === 0) {
+      weekSelectionSection.classList.add("hidden");
+      return;
+    }
+
+    const sortedWeeks = Array.from(availableWeeks).sort((a, b) => a - b);
+    weekGrid.innerHTML = "";
+    
+    sortedWeeks.forEach(week => {
+      const label = document.createElement("label");
+      label.className = "week-tile";
+      label.innerHTML = `
+        <input type="checkbox" class="week-checkbox" value="${week}" checked />
+        <span>Week ${week}</span>
+      `;
+      weekGrid.appendChild(label);
+    });
+
+    weekSelectionSection.classList.remove("hidden");
+  }
+
+  function getSelectedWeeks() {
+    return Array.from(document.querySelectorAll(".week-checkbox:checked")).map(
+      (checkbox) => parseInt(checkbox.value, 10),
+    );
   }
 
   function clearFeedback() {
@@ -191,11 +236,11 @@
     } else {
       let message = `Wrong answer. Correct option: ${data.correct_option.toUpperCase()} - ${data.correct_option_text}`;
       showFeedback(message, "bad");
-      
-      // Fetch AI explanation asynchronously
-      if (state.currentQuestion) {
-        fetchExplanation(state.currentQuestion.id, data.selected_option);
-      }
+    }
+
+    // Fetch AI explanation asynchronously for all answers if secret code is set
+    if (state.currentQuestion) {
+      fetchExplanation(state.currentQuestion.id, data.selected_option);
     }
   }
 
@@ -272,6 +317,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sources: selectedSources,
+          weeks: getSelectedWeeks(),
           shuffle: shuffleToggle.checked,
           shuffle_options: shuffleOptionsToggle.checked,
         }),
@@ -469,5 +515,25 @@
   if (themeToggleBtn) {
     updateThemeToggleUi(getCurrentTheme());
     themeToggleBtn.addEventListener("click", toggleTheme);
+  }
+
+  // Initial week grid population
+  updateWeekGrid();
+
+  // Source change listener
+  document.querySelectorAll(".source-checkbox").forEach(checkbox => {
+    checkbox.addEventListener("change", updateWeekGrid);
+  });
+
+  if (selectAllWeeksBtn) {
+    selectAllWeeksBtn.addEventListener("click", () => {
+      document.querySelectorAll(".week-checkbox").forEach(cb => cb.checked = true);
+    });
+  }
+
+  if (clearAllWeeksBtn) {
+    clearAllWeeksBtn.addEventListener("click", () => {
+      document.querySelectorAll(".week-checkbox").forEach(cb => cb.checked = false);
+    });
   }
 })();
